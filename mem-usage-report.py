@@ -72,7 +72,7 @@ for app in apps:
 
   if ('0' in app_detail_result.keys()):
     for items in app_detail_result:
-        if app_detail_result[items]['state'] != "STARTING":
+        if app_detail_result[items]['state'] == "RUNNING":
             app_details.append(
                                 {
                                   "instance number" : items,
