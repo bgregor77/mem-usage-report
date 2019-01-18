@@ -3,6 +3,7 @@ import os
 import subprocess
 import urllib.parse
 import requests
+from pprint import pprint
 import json
 
 # First make sure we have an active session
@@ -57,24 +58,41 @@ while (not done):
   for app in apps_result['resources']:
     apps.append(app)
 
-print(len(apps),"apps found in Org")
-count = 0
+print(len(apps),"apps found in Orgs")
+running_count = 0
+stopped_count = 0
+unknown_state = 0
+app_details = []
 
 for app in apps:
   
   app_detail_uri = urllib.parse.urljoin(api_base_uri,os.path.join('v2/apps/',app['metadata']['guid'],'stats'))
   r = requests.get(app_detail_uri, headers=headers)
   app_detail_result = r.json()
-  
-  if ('0' in app_detail_result.keys()):
-    app_name = app_detail_result['0']['stats']['name']
-    app_state = app_detail_result['0']['state']
-    mem_quota = app_detail_result['0']['stats']['mem_quota']
-    mem_usage = app_detail_result['0']['stats']['usage']['mem']
-    pct = mem_usage / mem_quota
-    print(app_name, '\t' ,app_state, '\tMem Quota:', mem_quota,'\tMem Usage:',mem_usage,'{percent:.2%}'.format(percent=pct))
-    count = count + 1
-  #else:
-  #  print(app_detail_result['description'])
 
-print(count,'RUNNING apps found')
+  if ('0' in app_detail_result.keys()):
+    for items in app_detail_result:
+        if app_detail_result[items]['state'] != "STARTING":
+            app_details.append(
+                                {
+                                  "instance number" : items,
+                                  "app-name": app_detail_result[items]['stats']['name'],
+                                  "state"  : app_detail_result[items]['state'],
+                                  "mem-usage": app_detail_result[items]['stats']['usage']['mem']/1048576,
+                                  "mem-quota" : app_detail_result[items]['stats']['mem_quota']/1048576,
+                                  "percentage" : round(((app_detail_result[items]['stats']['usage']['mem'] /
+                                                  app_detail_result[items]['stats']['mem_quota'])*100),5)
+                     }
+            )
+            running_count = running_count + 1
+        else:
+            unknown_state = unknown_state + 1
+
+  else:
+   # print(app_detail_result['description'])
+   stopped_count = stopped_count + 1
+
+pprint(app_details)
+print(running_count, " RUNNING instances of apps found")
+print(stopped_count, " STOPPED instances of apps found")
+print(unknown_state, " UNKNOWN state apps found")
