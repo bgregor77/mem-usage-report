@@ -122,7 +122,7 @@ def get_mem_report(header,foundation,skip,endpoint='/v2/apps'):
               )
 @click.option(
                   "--password",
-                  default="!",
+                  default="",
                   help="password"
               )
 def go(foundation,skip_ssl_verification,user,password):
